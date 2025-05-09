@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import Admin from '../models/Admin';
 
 // POST /admin/login
-export const adminLogin = async (req: Request, res: Response) => {
+export const adminLogin = async (req: any, res: any) => {
     const { adminEmail, password } = req.body;
 
     if (!adminEmail || !password) {
@@ -43,7 +43,7 @@ export const adminLogin = async (req: Request, res: Response) => {
 };
 
 // POST /admin/signup
-export const adminSignup = async (req: Request, res: Response) => {
+export const adminSignup = async (req: any, res: any) => {
     const { adminEmail, password } = req.body;
 
     if (!adminEmail || !password) {
