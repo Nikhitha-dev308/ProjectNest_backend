@@ -55,10 +55,10 @@ export const Login = async (req: any, res: any) => {
 
 
 // POST /student/signup
-export const signup = (req: any, res: any): void => {
-    const { Fullname, email, Phonenumber, College, Branch, Year, Password } = req.body;
+export const signup = async (req: any, res: any) => {
+    const { name, email, phone, college, branch, year, Password } = req.body;
 
-    if (!Fullname || !email || !Phonenumber || !College || !Branch || !Year || !Password) {
+    if (!name || !email || !phone || !college || !branch || !year || !Password) {
         res.status(400).send({
             status: 3,
             message: "Signup failed",
@@ -68,33 +68,25 @@ export const signup = (req: any, res: any): void => {
         return;
     };
 
-    new Student({ Fullname, email, Phonenumber, College, Branch, Year, Password }).save();
-    const data = Student.find();
+    new Student({ name, email, phone, college, branch, year, Password }).save();
+    const data = await Student.find();
     console.log("data_______", data)
     const SignupData = `
 -------------------------
-Name: ${Fullname}
+Name: ${name}
 Email: ${email}
-Phone Number: ${Phonenumber}
-College: ${College}
-Branch: ${Branch}
-Year: ${Year}
+Phone Number: ${phone}
+College: ${college}
+Branch: ${branch}
+Year: ${year}
 Password: ${Password}
 -------------------------
 `;
-    fs.mkdirSync('document', { recursive: true });
-    fs.appendFile('./document/studentSignup.pdf', SignupData, (error) => {
-        if (error) {
-            console.error("File write error:", error);
-        } else {
-            console.log("Signup data saved to studentSignup.pdf");
-        }
-    });
     res.send({
         status: 1,
         message: "Signup data received",
         error: [],
-        data: []
+        data: data
     });
 };
 
@@ -117,18 +109,117 @@ export const submitIdea = (req: any, res: any): void => {
     new StudentIdeaSubmission({ title, description }).save();
 
     const SubmitIdea = `Title : ${title}\nDescription : ${description}\n\n`;
-    fs.mkdirSync('document', { recursive: true });
-    fs.appendFile('./document/Ideas.pdf', SubmitIdea, (error) => {
-        if (error) {
-            console.error("File write error:", error);
-        } else {
-            console.log("Idea is submitted in Ideas.pdf");
-        }
-    });
     res.send({
         status: 1,
         message: "Idea received",
         error: [],
         data: []
     });
+};
+
+
+// profile data 
+export const profileData = async (req: any, res: any) => {
+    try {
+        const { email } = req.query;
+        if (!email) {
+            return res.status(400).json({
+                status: 0,
+                message: "Email is required",
+                data: null,
+                error: ["Email query param missing"],
+            });
+        }
+
+        const student = await Student.findOne({ email });
+
+        if (!student) {
+            return res.status(404).json({
+                status: 1,
+                message: "student not found",
+                data: null,
+                error: ["No student with this email"],
+            });
+        }
+
+        return res.status(200).json({
+            status: 3,
+            message: "Success",
+            data: {
+                name: student.name,
+                email: student.email,
+                phone: student.phone,
+                college: student.college,
+                branch: student.branch,
+                year: student.year
+            }
+            ,
+            error: [],
+        });
+    } catch (err: any) {
+        console.error("Error fetching student profile:", err);
+        return res.status(500).json({
+            status: 2,
+            message: "Internal server error",
+            data: null,
+            error: [err.message],
+        });
+    }
+};
+
+
+
+// saving data in the profile
+export const updateProfile = async (req: any, res: any) => {
+    try {
+        const { name, email, phone, college, branch, year } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                status: 3,
+                message: "Email is required to update profile",
+                data: null,
+                error: ["Missing 'email' in request body"],
+            });
+        }
+        // Update the expert in the database
+        const updatedStudent = await Student.findOneAndUpdate(
+            { email },
+            {
+                $set: {
+                    name,
+                    email,
+                    phone,
+                    college,
+                    branch,
+                    year
+                },
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedStudent) {
+            return res.status(404).json({
+                status: 2,
+                message: 'student not found',
+                data: null,
+                error: ["No student found with the provided email"],
+            });
+        }
+        return res.status(200).json({
+            status: 1,
+            message: "Profile updated successfully",
+            data: updatedStudent,
+            error: [],
+        });
+
+    } catch (err: any) {
+        console.error("Error updating student profile:", err);
+        return res.status(500).json({
+            status: 2,
+            message: "Internal server error",
+            data: null,
+            error: [err.message],
+        });
+    }
 };

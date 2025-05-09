@@ -42,7 +42,7 @@ export const expertSignup = async (req: any, res: any): Promise<void> => {
         const {
             name,
             email,
-            number,
+            phone,
             experience,
             github,
             city,
@@ -50,7 +50,7 @@ export const expertSignup = async (req: any, res: any): Promise<void> => {
             confirmpassword
         } = req.body;
 
-        if (!name || !email || !number || !experience || !github || !city || !createpassword || !confirmpassword) {
+        if (!name || !email || !phone || !experience || !github || !city || !createpassword || !confirmpassword) {
             return res.status(400).send({
                 status: 3,
                 message: "Signup failed",
@@ -71,7 +71,7 @@ export const expertSignup = async (req: any, res: any): Promise<void> => {
         const newExpert = new Expert({
             name,
             email,
-            number,
+            phone,
             experience,
             github,
             city,
@@ -98,7 +98,7 @@ export const expertSignup = async (req: any, res: any): Promise<void> => {
     }
 };
 
-
+// fetching projects in expert dashboard
 export const fetchProjects = async (req: any, res: any) => {
     const data = await StudentIdeaSubmission.find({});
     console.log("data___________", data);
@@ -111,3 +111,100 @@ export const fetchProjects = async (req: any, res: any) => {
 
     })
 }
+
+
+// profile data 
+export const profileData = async (req: any, res: any) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                status: 0,
+                message: "Email is required",
+                data: null,
+                error: ["Email query param missing"],
+            });
+        }
+
+        const expert = await Expert.findOne({ email });
+
+        if (!expert) {
+            return res.status(404).json({
+                status: 1,
+                message: "Expert not found",
+                data: null,
+                error: ["No expert with this email"],
+            });
+        }
+        return res.status(200).json({
+            status: 3,
+            message: "Success",
+            data: expert,
+            error: [],
+        });
+    } catch (err: any) {
+        console.error("Error fetching expert profile:", err);
+        return res.status(500).json({
+            status: 2,
+            message: "Internal server error",
+            data: null,
+            error: [err.message],
+        });
+    }
+};
+
+// saving data in the profile
+export const updateProfile = async (req: any, res: any) => {
+    try {
+        const { name, email, phone, experience, github, city } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                status: 3,
+                message: "Email is required to update profile",
+                data: null,
+                error: ["Missing 'email' in request body"],
+            });
+        }
+        // Update the expert in the database
+        const updatedExpert = await Expert.findOneAndUpdate(
+            { email },
+            {
+                $set: {
+                    name,
+                    phone,
+                    experience,
+                    github,
+                    city,
+                },
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedExpert) {
+            return res.status(404).json({
+                status: 2,
+                message: 'Expert not found',
+                data: null,
+                error: ["No expert found with the provided email"],
+            });
+        }
+        return res.status(200).json({
+            status: 1,
+            message: "Profile updated successfully",
+            data: updatedExpert,
+            error: [],
+        });
+
+    } catch (err: any) {
+        console.error("Error updating expert profile:", err);
+        return res.status(500).json({
+            status: 2,
+            message: "Internal server error",
+            data: null,
+            error: [err.message],
+        });
+    }
+};
+

@@ -16,6 +16,13 @@ ExpressApp.use('/student', studentRoutes);
 ExpressApp.use('/expert', expertRoutes);
 ExpressApp.use('/admin', adminRoutes);
 
+ExpressApp.get('/', (req: any, res: any) => {
+    res.json({
+        status: "ok"
+    })
+});
+
+
 ExpressApp.listen(3002, () => {
     console.log("Server running at http://localhost:3002");
 });
